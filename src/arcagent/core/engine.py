@@ -1,15 +1,14 @@
 """Agent engine: wraps Claude CLI for AI interactions.
 
-Provides two modes:
-1. SDK mode: Uses claude-agent-sdk for rich multi-turn conversations with tool support
-2. CLI mode: Falls back to `claude --print` subprocess for simple, reliable queries
-
-Auth is delegated to the `claude` CLI — no token management here.
+Uses claude --print with full tool access for both one-shot and
+conversation modes. Supports shell execution, web fetching, and
+persistent memory.
 """
 
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 import shutil
 
@@ -22,8 +21,7 @@ logger = logging.getLogger(__name__)
 class AgentEngine:
     """Core agent engine wrapping Claude CLI.
 
-    Uses `claude --print` for reliable one-shot queries, and attempts
-    the SDK streaming mode for multi-turn conversations.
+    Uses `claude` CLI with tool access for autonomous operation.
     """
 
     def __init__(
@@ -46,21 +44,17 @@ class AgentEngine:
         return self._conversations
 
     def update_system_prompt(self, prompt: str) -> None:
-        """Update the system prompt (e.g., after skills reload)."""
         self._system_prompt = prompt
 
     async def one_shot(self, prompt: str) -> AgentResponse:
-        """Send a one-shot query using `claude --print` subprocess.
-
-        This is the most reliable method — proven to work on headless VPS.
-        """
+        """Send a one-shot query with full tool access."""
         cmd = [self._cli_path, "--print"]
 
         if self._system_prompt:
             cmd.extend(["--system-prompt", self._system_prompt])
 
-        cmd.extend(["--permission-mode", "acceptEdits"])
-        cmd.extend(["--max-turns", "3"])
+        cmd.extend(["--permission-mode", "bypassPermissions"])
+        cmd.extend(["--max-turns", "25"])
         cmd.append(prompt)
 
         try:
@@ -70,7 +64,7 @@ class AgentEngine:
                 stderr=asyncio.subprocess.PIPE,
             )
             stdout, stderr = await asyncio.wait_for(
-                proc.communicate(), timeout=120
+                proc.communicate(), timeout=300
             )
 
             if proc.returncode != 0:
@@ -82,17 +76,15 @@ class AgentEngine:
             return AgentResponse(text=text)
 
         except asyncio.TimeoutError:
-            logger.error("Claude CLI timed out after 120s")
+            if proc:
+                proc.kill()
+            logger.error("Claude CLI timed out after 300s")
             raise RuntimeError("Claude took too long to respond")
 
     async def send_message(
         self, conversation_id: str, message: str
     ) -> AgentResponse:
-        """Send a message in a conversation.
-
-        For now, uses one-shot mode with conversation history prepended.
-        Each message includes prior context for continuity.
-        """
+        """Send a message in a conversation with history context."""
         conv = self._conversations.get_or_create(conversation_id)
         conv.add_message(ConversationMessage(
             role=MessageRole.USER, content=message
@@ -100,13 +92,14 @@ class AgentEngine:
 
         # Build context from conversation history
         history_parts: list[str] = []
-        # Include last 10 messages for context
         recent = conv.messages[-10:]
-        if len(recent) > 1:  # More than just the current message
+        if len(recent) > 1:
             history_parts.append("Previous conversation:")
-            for msg in recent[:-1]:  # Exclude current message
+            for msg in recent[:-1]:
                 role = "User" if msg.role == MessageRole.USER else "Assistant"
-                history_parts.append(f"{role}: {msg.content}")
+                # Truncate long messages in history
+                content = msg.content[:500] + "..." if len(msg.content) > 500 else msg.content
+                history_parts.append(f"{role}: {content}")
             history_parts.append("")
             history_parts.append(f"Current message: {message}")
             full_prompt = "\n".join(history_parts)
@@ -123,11 +116,8 @@ class AgentEngine:
         return response
 
     async def close_session(self, conversation_id: str) -> None:
-        """Close a conversation session and cleanup."""
         self._conversations.remove(conversation_id)
 
     async def close_all(self) -> None:
-        """Close all active sessions."""
-        # Clear all conversation state
         for conv in self._conversations.list_active():
             self._conversations.remove(conv.conversation_id)

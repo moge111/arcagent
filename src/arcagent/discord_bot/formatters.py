@@ -1,6 +1,10 @@
-"""Format agent responses for Discord (markdown, embeds, truncation)."""
+"""Format agent responses for Discord (markdown, embeds, files, truncation)."""
 
 from __future__ import annotations
+
+import io
+import os
+import re
 
 import discord
 
@@ -11,14 +15,12 @@ DISCORD_MAX_EMBED = 4096
 
 
 def truncate(text: str, limit: int = DISCORD_MAX_MESSAGE, suffix: str = "\n...(truncated)") -> str:
-    """Truncate text to fit Discord's character limit."""
     if len(text) <= limit:
         return text
     return text[: limit - len(suffix)] + suffix
 
 
 def split_message(text: str, limit: int = DISCORD_MAX_MESSAGE) -> list[str]:
-    """Split a long message into chunks that fit Discord's limit."""
     if len(text) <= limit:
         return [text]
 
@@ -28,7 +30,6 @@ def split_message(text: str, limit: int = DISCORD_MAX_MESSAGE) -> list[str]:
             chunks.append(text)
             break
 
-        # Try to split at a newline
         split_idx = text.rfind("\n", 0, limit)
         if split_idx == -1 or split_idx < limit // 2:
             split_idx = limit
@@ -40,10 +41,37 @@ def split_message(text: str, limit: int = DISCORD_MAX_MESSAGE) -> list[str]:
 
 
 def format_response(response: AgentResponse) -> list[str]:
-    """Format an AgentResponse into Discord-ready message chunks."""
     if not response.text:
         return ["*(No response)*"]
     return split_message(response.text)
+
+
+def extract_file_paths(text: str) -> list[str]:
+    """Extract file paths mentioned in the response that exist on disk."""
+    # Look for common file path patterns
+    patterns = [
+        r'/(?:home|tmp|var|root)/[\w/.+\-]+\.(?:png|jpg|jpeg|gif|svg|pdf|csv|txt|json|py|sh|log)',
+    ]
+    paths = []
+    for pattern in patterns:
+        matches = re.findall(pattern, text)
+        for match in matches:
+            if os.path.isfile(match):
+                paths.append(match)
+    return paths
+
+
+def make_file_attachment(filepath: str) -> discord.File | None:
+    """Create a Discord file attachment from a server file path."""
+    if not os.path.isfile(filepath):
+        return None
+    try:
+        filesize = os.path.getsize(filepath)
+        if filesize > 8_000_000:  # Discord 8MB limit
+            return None
+        return discord.File(filepath, filename=os.path.basename(filepath))
+    except (OSError, PermissionError):
+        return None
 
 
 def make_status_embed(
@@ -51,9 +79,8 @@ def make_status_embed(
     skills_count: int,
     tools_count: int,
 ) -> discord.Embed:
-    """Create a status embed for the /status command."""
     embed = discord.Embed(
-        title="ArcAgent Status",
+        title="Terry Status",
         color=discord.Color.green(),
     )
     embed.add_field(name="Active Sessions", value=str(active_sessions), inline=True)
@@ -63,13 +90,12 @@ def make_status_embed(
 
 
 def make_skills_embed(skills: list[dict]) -> discord.Embed:
-    """Create an embed listing skills."""
     embed = discord.Embed(
         title="Available Skills",
         color=discord.Color.blue(),
     )
 
-    for skill in skills[:25]:  # Discord embed field limit
+    for skill in skills[:25]:
         status = "Enabled" if skill["enabled"] else "Disabled"
         embed.add_field(
             name=f"{skill['name']} [{status}]",
@@ -84,5 +110,4 @@ def make_skills_embed(skills: list[dict]) -> discord.Embed:
 
 
 def make_tool_use_message(tool_name: str) -> str:
-    """Format a tool use notification."""
     return f"*Using tool: `{tool_name}`...*"

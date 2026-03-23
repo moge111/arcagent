@@ -3,52 +3,97 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ArcAgent Dashboard</title>
+    <title>Terry — Dashboard</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <header>
-        <h1>ArcAgent Dashboard</h1>
-        <div id="status-badge" class="badge">Loading...</div>
+        <div class="header-left">
+            <div class="logo">T</div>
+            <div>
+                <h1>Terry</h1>
+                <span class="subtitle">AI Agent Dashboard</span>
+            </div>
+        </div>
+        <div id="status-badge" class="badge">Connecting...</div>
     </header>
 
     <main>
-        <section id="status-panel" class="panel">
-            <h2>Status</h2>
-            <div class="grid">
-                <div class="stat">
-                    <span class="stat-value" id="uptime">--</span>
-                    <span class="stat-label">Uptime</span>
-                </div>
-                <div class="stat">
-                    <span class="stat-value" id="sessions">--</span>
-                    <span class="stat-label">Active Sessions</span>
-                </div>
-                <div class="stat">
-                    <span class="stat-value" id="skills-count">--</span>
-                    <span class="stat-label">Skills</span>
-                </div>
-                <div class="stat">
-                    <span class="stat-value" id="tools-count">--</span>
-                    <span class="stat-label">Tools</span>
-                </div>
+        <!-- Stats Row -->
+        <section class="stats-row">
+            <div class="stat-card">
+                <div class="stat-icon">&#9650;</div>
+                <div class="stat-value" id="uptime">--</div>
+                <div class="stat-label">Uptime</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">&#9679;</div>
+                <div class="stat-value" id="sessions">0</div>
+                <div class="stat-label">Active Sessions</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">&#9733;</div>
+                <div class="stat-value" id="skills-count">0</div>
+                <div class="stat-label">Skills</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">&#9881;</div>
+                <div class="stat-value" id="tools-count">0</div>
+                <div class="stat-label">Tools</div>
             </div>
         </section>
 
-        <section id="skills-panel" class="panel">
-            <h2>Skills</h2>
-            <div id="skills-list" class="skills-list">
-                <p class="muted">Loading skills...</p>
+        <div class="two-col">
+            <!-- Skills Panel -->
+            <section class="panel">
+                <div class="panel-header">
+                    <h2>Skills</h2>
+                    <span class="panel-badge" id="skills-enabled-badge">0 enabled</span>
+                </div>
+                <div id="skills-list" class="skills-list">
+                    <div class="loading-spinner"></div>
+                </div>
+            </section>
+
+            <!-- Tools Panel -->
+            <section class="panel">
+                <div class="panel-header">
+                    <h2>Tools</h2>
+                    <span class="panel-badge" id="tools-badge">0 registered</span>
+                </div>
+                <div id="tools-list" class="tools-list">
+                    <div class="loading-spinner"></div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Conversations Panel -->
+        <section class="panel">
+            <div class="panel-header">
+                <h2>Active Conversations</h2>
+                <span class="panel-badge" id="convos-badge">0</span>
+            </div>
+            <div id="convos-list" class="convos-list">
+                <p class="muted">No active conversations</p>
             </div>
         </section>
 
-        <section id="logs-panel" class="panel">
-            <h2>Recent Logs</h2>
+        <!-- Logs Panel -->
+        <section class="panel">
+            <div class="panel-header">
+                <h2>Activity Log</h2>
+                <button class="btn-small" onclick="refreshLogs()">Refresh</button>
+            </div>
             <div id="logs-list" class="logs-list">
-                <p class="muted">Loading logs...</p>
+                <p class="muted">No activity yet</p>
             </div>
         </section>
     </main>
+
+    <footer>
+        <span>Terry v0.1.0</span>
+        <span>Powered by Claude</span>
+    </footer>
 
     <script src="app.js"></script>
 </body>
