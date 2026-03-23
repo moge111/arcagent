@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Terry — Dashboard</title>
+    <title>Terry</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -12,54 +14,47 @@
             <div class="logo">T</div>
             <div>
                 <h1>Terry</h1>
-                <span class="subtitle">AI Agent Dashboard</span>
+                <span class="subtitle">AI Agent</span>
             </div>
         </div>
         <div id="status-badge" class="badge">Connecting...</div>
     </header>
 
     <main>
-        <!-- Stats Row -->
         <section class="stats-row">
             <div class="stat-card">
-                <div class="stat-icon">&#9650;</div>
-                <div class="stat-value" id="uptime">--</div>
                 <div class="stat-label">Uptime</div>
+                <div class="stat-value" id="uptime">--</div>
             </div>
             <div class="stat-card">
-                <div class="stat-icon">&#9679;</div>
+                <div class="stat-label">Sessions</div>
                 <div class="stat-value" id="sessions">0</div>
-                <div class="stat-label">Active Sessions</div>
             </div>
             <div class="stat-card">
-                <div class="stat-icon">&#9733;</div>
-                <div class="stat-value" id="skills-count">0</div>
                 <div class="stat-label">Skills</div>
+                <div class="stat-value" id="skills-count">0</div>
             </div>
             <div class="stat-card">
-                <div class="stat-icon">&#9881;</div>
-                <div class="stat-value" id="tools-count">0</div>
                 <div class="stat-label">Tools</div>
+                <div class="stat-value" id="tools-count">0</div>
             </div>
         </section>
 
         <div class="two-col">
-            <!-- Skills Panel -->
             <section class="panel">
                 <div class="panel-header">
                     <h2>Skills</h2>
-                    <span class="panel-badge" id="skills-enabled-badge">0 enabled</span>
+                    <span class="panel-badge" id="skills-enabled-badge">0</span>
                 </div>
                 <div id="skills-list" class="skills-list">
                     <div class="loading-spinner"></div>
                 </div>
             </section>
 
-            <!-- Tools Panel -->
             <section class="panel">
                 <div class="panel-header">
                     <h2>Tools</h2>
-                    <span class="panel-badge" id="tools-badge">0 registered</span>
+                    <span class="panel-badge" id="tools-badge">0</span>
                 </div>
                 <div id="tools-list" class="tools-list">
                     <div class="loading-spinner"></div>
@@ -67,10 +62,9 @@
             </section>
         </div>
 
-        <!-- Conversations Panel -->
         <section class="panel">
             <div class="panel-header">
-                <h2>Active Conversations</h2>
+                <h2>Conversations</h2>
                 <span class="panel-badge" id="convos-badge">0</span>
             </div>
             <div id="convos-list" class="convos-list">
@@ -78,21 +72,20 @@
             </div>
         </section>
 
-        <!-- Logs Panel -->
         <section class="panel">
             <div class="panel-header">
-                <h2>Activity Log</h2>
+                <h2>Log</h2>
                 <button class="btn-small" onclick="refreshLogs()">Refresh</button>
             </div>
             <div id="logs-list" class="logs-list">
-                <p class="muted">No activity yet</p>
+                <p class="muted">No activity</p>
             </div>
         </section>
     </main>
 
     <footer>
         <span>Terry v0.1.0</span>
-        <span>Powered by Claude</span>
+        <span>Claude Opus</span>
     </footer>
 
     <script src="app.js"></script>

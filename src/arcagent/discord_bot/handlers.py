@@ -4,9 +4,11 @@ from __future__ import annotations
 
 import io
 import logging
+import os
 from typing import TYPE_CHECKING
 
 import discord
+import httpx
 
 from .formatters import extract_file_paths, format_response, make_file_attachment
 
@@ -14,6 +16,30 @@ if TYPE_CHECKING:
     from .bot import ArcAgentBot
 
 logger = logging.getLogger(__name__)
+
+TEMP_DIR = "/tmp/discord_attachments"
+
+
+async def download_attachment(attachment: discord.Attachment) -> str | None:
+    """Download a Discord attachment to a temp file. Returns the file path."""
+    os.makedirs(TEMP_DIR, exist_ok=True)
+    filepath = os.path.join(TEMP_DIR, f"{attachment.id}_{attachment.filename}")
+
+    try:
+        async with httpx.AsyncClient(timeout=30) as client:
+            resp = await client.get(attachment.url)
+            resp.raise_for_status()
+            with open(filepath, "wb") as f:
+                f.write(resp.content)
+        return filepath
+    except Exception as e:
+        logger.warning("Failed to download attachment %s: %s", attachment.filename, e)
+        return None
+
+
+def is_image(filename: str) -> bool:
+    ext = filename.lower().rsplit(".", 1)[-1] if "." in filename else ""
+    return ext in ("png", "jpg", "jpeg", "gif", "webp", "bmp")
 
 
 async def handle_any_message(bot: ArcAgentBot, message: discord.Message) -> None:
@@ -23,6 +49,27 @@ async def handle_any_message(bot: ArcAgentBot, message: discord.Message) -> None
     # Strip bot mention if present
     if bot.user:
         content = content.replace(f"<@{bot.user.id}>", "").strip()
+
+    # Handle attachments — download them and add context to the message
+    attachment_paths = []
+    if message.attachments:
+        for att in message.attachments:
+            filepath = await download_attachment(att)
+            if filepath:
+                attachment_paths.append((filepath, att.filename))
+
+        # Add attachment info to the prompt
+        if attachment_paths:
+            att_lines = []
+            for path, name in attachment_paths:
+                if is_image(name):
+                    att_lines.append(
+                        f"[Image attached: saved to {path}. "
+                        f"Use OCR to read it: python3 -c \"from PIL import Image; import pytesseract; print(pytesseract.image_to_string(Image.open('{path}')))\"]"
+                    )
+                else:
+                    att_lines.append(f"[File attached: saved to {path}. Read it with: cat {path}]")
+            content = content + "\n\n" + "\n".join(att_lines) if content else "\n".join(att_lines)
 
     if not content:
         return
