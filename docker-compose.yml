@@ -1,0 +1,13 @@
+services:
+  arcagent:
+    build: .
+    env_file: .env
+    volumes:
+      - ./skills:/app/skills:ro
+      - arcagent-data:/app/data
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
+volumes:
+  arcagent-data:

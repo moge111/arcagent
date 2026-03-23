@@ -1,0 +1,31 @@
+# ArcAgent Configuration
+# Environment variables override these values.
+# Credentials (tokens, keys) should be set via env vars or ~/.arcagent/credentials.json
+
+discord:
+  # bot_token: set via ARCAGENT_DISCORD_TOKEN env var
+  command_prefix: "/"
+
+dashboard:
+  host: "127.0.0.1"
+  port: 8080
+  # auth_token: auto-generated if not set, or set via ARCAGENT_DASHBOARD_TOKEN
+
+skills:
+  dirs:
+    - "./skills"
+  limits:
+    max_candidates_per_root: 300
+    max_skills_in_prompt: 150
+    max_skills_prompt_chars: 30000
+    max_skill_file_bytes: 262144  # 256KB
+  entries: {}
+    # skill-name:
+    #   enabled: true
+    #   env:
+    #     SOME_VAR: "value"
+
+claude:
+  # cli_path: auto-detected if not set
+  system_prompt_append: ""
+  max_conversation_ttl: 3600
